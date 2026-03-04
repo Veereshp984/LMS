@@ -20,6 +20,10 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(requestLogger);
 
+app.get("/", (req, res) => {
+  res.json({ message: "Backend is live", health: "/api/health" });
+});
+
 app.use("/api/health", healthRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/subjects", subjectRoutes);
