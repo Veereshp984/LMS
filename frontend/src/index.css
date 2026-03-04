@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: "Public Sans", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color: #1f2937;
+  background: #f6f8fb;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.brand-gradient {
+  background: linear-gradient(135deg, #0a4dcf 0%, #2563eb 60%, #3b82f6 100%);
+}
