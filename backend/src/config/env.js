@@ -26,5 +26,11 @@ module.exports = {
   JWT_ACCESS_EXPIRES_IN: process.env.JWT_ACCESS_EXPIRES_IN || "15m",
   JWT_REFRESH_EXPIRES_IN: process.env.JWT_REFRESH_EXPIRES_IN || "30d",
   CORS_ORIGIN: required("CORS_ORIGIN"),
+  CORS_ORIGINS: required("CORS_ORIGIN")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean),
   COOKIE_DOMAIN: process.env.COOKIE_DOMAIN || "localhost",
+  HUGGING_FACE_API_KEY: process.env.HUGGING_FACE_API_KEY || "",
+  HUGGING_FACE_MODEL: process.env.HUGGING_FACE_MODEL || "Qwen/Qwen3.5-0.8B",
 };

@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import useAuthStore from "../../store/authStore";
 import { logout } from "../../lib/auth";
+import NavbarChatbot from "./NavbarChatbot";
 
 export default function AppShell({ children }) {
   const { isAuthenticated, user } = useAuthStore();
@@ -14,8 +15,12 @@ export default function AppShell({ children }) {
             LearnSphere
           </Link>
           <div className="flex items-center gap-5">
+            <NavbarChatbot />
             {isAuthenticated ? (
               <>
+                <Link to="/my-courses" className="text-sm font-medium text-slate-700">
+                  My Courses
+                </Link>
                 <Link to="/profile" className="text-sm font-medium text-slate-700">
                   {user?.name || "Profile"}
                 </Link>

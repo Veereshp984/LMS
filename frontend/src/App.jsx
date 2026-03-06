@@ -5,6 +5,7 @@ import Register from "./pages/Register";
 import SubjectOverview from "./pages/SubjectOverview";
 import VideoPage from "./pages/VideoPage";
 import Profile from "./pages/Profile";
+import MyCourses from "./pages/MyCourses";
 import AuthGuard from "./components/Auth/AuthGuard";
 
 export default function App() {
@@ -26,6 +27,14 @@ export default function App() {
         element={
           <AuthGuard>
             <VideoPage />
+          </AuthGuard>
+        }
+      />
+      <Route
+        path="/my-courses"
+        element={
+          <AuthGuard>
+            <MyCourses />
           </AuthGuard>
         }
       />

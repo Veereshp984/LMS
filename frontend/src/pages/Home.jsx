@@ -1,12 +1,18 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import AppShell from "../components/Layout/AppShell";
 import apiClient from "../lib/apiClient";
 import Alert from "../components/common/Alert";
+import useAuthStore from "../store/authStore";
 
 export default function Home() {
   const [subjects, setSubjects] = useState([]);
   const [error, setError] = useState("");
+  const [enrolledIds, setEnrolledIds] = useState([]);
+  const [enrollingId, setEnrollingId] = useState(null);
+  const { isAuthenticated } = useAuthStore();
+  const navigate = useNavigate();
+  const enrolledSet = useMemo(() => new Set(enrolledIds), [enrolledIds]);
 
   useEffect(() => {
     apiClient
@@ -14,6 +20,43 @@ export default function Home() {
       .then((res) => setSubjects(res.data.items || []))
       .catch(() => setError("Failed to load subjects"));
   }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setEnrolledIds([]);
+      return;
+    }
+    apiClient
+      .get("/enrollments/mine")
+      .then((res) => {
+        const ids = (res.data.items || []).map((item) => Number(item.id));
+        setEnrolledIds(ids);
+      })
+      .catch(() => {
+        // silently ignore; subject listing should still work
+      });
+  }, [isAuthenticated]);
+
+  async function onEnroll(event, subjectId) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!isAuthenticated) {
+      navigate("/login");
+      return;
+    }
+    if (enrolledSet.has(Number(subjectId)) || enrollingId) return;
+
+    setEnrollingId(Number(subjectId));
+    try {
+      await apiClient.post(`/enrollments/${subjectId}`);
+      setEnrolledIds((prev) => (prev.includes(Number(subjectId)) ? prev : [...prev, Number(subjectId)]));
+    } catch (err) {
+      setError(err?.response?.data?.message || "Failed to enroll in course");
+    } finally {
+      setEnrollingId(null);
+    }
+  }
 
   return (
     <AppShell>
@@ -50,6 +93,20 @@ export default function Home() {
                 <p className="text-sm text-slate-600">
                   Start learning with a locked sequence path and track your completion.
                 </p>
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={(event) => onEnroll(event, subject.id)}
+                    disabled={Boolean(enrollingId) || enrolledSet.has(Number(subject.id))}
+                    className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-300"
+                  >
+                    {enrolledSet.has(Number(subject.id))
+                      ? "Enrolled"
+                      : enrollingId === Number(subject.id)
+                        ? "Enrolling..."
+                        : "Enroll"}
+                  </button>
+                </div>
               </div>
             </Link>
           ))}

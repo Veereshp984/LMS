@@ -113,8 +113,15 @@ LMS/
 - `GET /api/progress/videos/:videoId`
 - `POST /api/progress/videos/:videoId`
 
+### Enrollments
+- `POST /api/enrollments/:subjectId`
+- `GET /api/enrollments/mine`
+
 ### Health
 - `GET /api/health`
+
+### Chat
+- `POST /api/chat`
 
 ---
 
@@ -137,9 +144,11 @@ JWT_REFRESH_SECRET=your_refresh_secret
 JWT_ACCESS_EXPIRES_IN=15m
 JWT_REFRESH_EXPIRES_IN=30d
 
-CORS_ORIGIN=http://localhost:5173
+CORS_ORIGIN=http://localhost:5173,https://lms-bice-two.vercel.app
 COOKIE_DOMAIN=localhost
 NODE_ENV=development
+HUGGING_FACE_API_KEY=your_hf_token
+HUGGING_FACE_MODEL=Qwen/Qwen3.5-0.8B
 ```
 
 ### Frontend (`frontend/.env`)
@@ -212,4 +221,3 @@ npm run dev
 - Certificates/milestones
 - Unit and integration tests
 - Course analytics dashboard
-
