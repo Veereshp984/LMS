@@ -93,7 +93,10 @@ export default function Home() {
                 <p className="text-sm text-slate-600">
                   Start learning with a locked sequence path and track your completion.
                 </p>
-                <div className="pt-1">
+                <div className="flex items-center justify-between pt-1">
+                  <p className="text-sm font-semibold text-slate-900">
+                    {formatInr(subject.price_inr)}
+                  </p>
                   <button
                     type="button"
                     onClick={(event) => onEnroll(event, subject.id)}
@@ -147,4 +150,14 @@ function getYoutubeId(url = "") {
     return null;
   }
   return null;
+}
+
+function formatInr(value) {
+  const amount = Number(value);
+  if (!Number.isFinite(amount) || amount <= 0) return "Free";
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(amount);
 }

@@ -19,6 +19,7 @@ function listEnrolledSubjects(userId) {
       "s.title",
       "s.slug",
       "s.description",
+      "s.price_inr",
       "e.created_at as enrolled_at",
       db.raw(
         `(SELECT v.youtube_url

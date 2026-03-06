@@ -16,6 +16,7 @@ async function listPublishedSubjects({ page, pageSize, q }) {
       "title",
       "slug",
       "description",
+      "price_inr",
       "created_at",
       db.raw(
         `(SELECT v.youtube_url
@@ -38,7 +39,7 @@ async function listPublishedSubjects({ page, pageSize, q }) {
 
 function getPublishedSubjectById(subjectId) {
   return db("subjects")
-    .select("id", "title", "slug", "description", "is_published", "created_at", "updated_at")
+    .select("id", "title", "slug", "description", "price_inr", "is_published", "created_at", "updated_at")
     .where({ id: subjectId, is_published: 1 })
     .first();
 }
