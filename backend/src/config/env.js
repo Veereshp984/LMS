@@ -41,5 +41,5 @@ module.exports = {
     process.env.HF_TOKEN,
     process.env.HUGGINGFACEHUB_API_TOKEN
   ),
-  HUGGING_FACE_MODEL: process.env.HUGGING_FACE_MODEL || "Qwen/Qwen3.5-0.8B",
+  HUGGING_FACE_MODEL: process.env.HUGGING_FACE_MODEL || "meta-llama/Llama-3.1-8B-Instruct",
 };
