@@ -1,6 +1,16 @@
 import { useEffect, useRef } from "react";
 import YouTube from "react-youtube";
 
+function getYoutubePlaylistIdFromUrl(url = "") {
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname.includes("youtube.com")) return parsed.searchParams.get("list");
+  } catch (e) {
+    return null;
+  }
+  return null;
+}
+
 function getYoutubeIdFromUrl(url = "") {
   try {
     const parsed = new URL(url);
@@ -22,6 +32,7 @@ export default function VideoPlayer({
   const playerRef = useRef(null);
   const timerRef = useRef(null);
   const ytVideoId = videoId || getYoutubeIdFromUrl(youtubeUrl);
+  const ytPlaylistId = getYoutubePlaylistIdFromUrl(youtubeUrl);
 
   const flushProgress = async () => {
     if (!playerRef.current) return;
@@ -43,18 +54,21 @@ export default function VideoPlayer({
     };
   }, []);
 
-  if (!ytVideoId) {
+  if (!ytVideoId && !ytPlaylistId) {
     return <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">Video unavailable</div>;
   }
 
   return (
     <div className="overflow-hidden rounded-md border border-slate-200 bg-black">
       <YouTube
-        videoId={ytVideoId}
+        videoId={ytVideoId || undefined}
         opts={{
           width: "100%",
           height: "480",
-          playerVars: { start: startPositionSeconds || 0 },
+          playerVars: {
+            start: startPositionSeconds || 0,
+            ...(ytPlaylistId ? { listType: "playlist", list: ytPlaylistId } : {}),
+          },
         }}
         onReady={(event) => {
           playerRef.current = event.target;
