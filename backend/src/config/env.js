@@ -10,6 +10,10 @@ function required(name) {
   return value;
 }
 
+function firstNonEmpty(...values) {
+  return values.map((value) => (typeof value === "string" ? value.trim() : "")).find(Boolean) || "";
+}
+
 module.exports = {
   NODE_ENV: process.env.NODE_ENV || "development",
   PORT: Number(process.env.PORT || 5000),
@@ -31,6 +35,11 @@ module.exports = {
     .map((value) => value.trim())
     .filter(Boolean),
   COOKIE_DOMAIN: process.env.COOKIE_DOMAIN || "localhost",
-  HUGGING_FACE_API_KEY: process.env.HUGGING_FACE_API_KEY || "",
+  HUGGING_FACE_API_KEY: firstNonEmpty(
+    process.env.HUGGING_FACE_API_KEY,
+    process.env.HF_API_KEY,
+    process.env.HF_TOKEN,
+    process.env.HUGGINGFACEHUB_API_TOKEN
+  ),
   HUGGING_FACE_MODEL: process.env.HUGGING_FACE_MODEL || "Qwen/Qwen3.5-0.8B",
 };

@@ -25,7 +25,7 @@ function extractReply(data) {
 
 async function askAssistant(message, imageUrl) {
   if (!HUGGING_FACE_API_KEY) {
-    throw createHttpError(500, "HUGGING_FACE_API_KEY is missing on the backend");
+    throw createHttpError(500, "Hugging Face API key is missing. Set one of: HUGGING_FACE_API_KEY, HF_API_KEY, HF_TOKEN, HUGGINGFACEHUB_API_TOKEN");
   }
 
   const userContent = imageUrl
