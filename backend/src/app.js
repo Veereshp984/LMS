@@ -13,6 +13,7 @@ const progressRoutes = require("./modules/progress/progress.routes");
 const healthRoutes = require("./modules/health/health.routes");
 const chatRoutes = require("./modules/chat/chat.routes");
 const enrollmentRoutes = require("./modules/enrollments/enrollment.routes");
+const paymentRoutes = require("./modules/payments/payment.routes");
 
 const app = express();
 
@@ -33,6 +34,7 @@ app.use("/api/videos", videoRoutes);
 app.use("/api/progress", progressRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/enrollments", enrollmentRoutes);
+app.use("/api/payments", paymentRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ message: "Route not found" });

@@ -49,10 +49,9 @@ export default function Home() {
 
     setEnrollingId(Number(subjectId));
     try {
-      await apiClient.post(`/enrollments/${subjectId}`);
-      setEnrolledIds((prev) => (prev.includes(Number(subjectId)) ? prev : [...prev, Number(subjectId)]));
+      navigate(`/checkout/${subjectId}`);
     } catch (err) {
-      setError(err?.response?.data?.message || "Failed to enroll in course");
+      setError(err?.response?.data?.message || "Failed to open checkout");
     } finally {
       setEnrollingId(null);
     }
@@ -106,8 +105,8 @@ export default function Home() {
                     {enrolledSet.has(Number(subject.id))
                       ? "Enrolled"
                       : enrollingId === Number(subject.id)
-                        ? "Enrolling..."
-                        : "Enroll"}
+                        ? "Opening..."
+                        : "Pay & Enroll"}
                   </button>
                 </div>
               </div>

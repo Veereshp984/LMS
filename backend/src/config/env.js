@@ -42,4 +42,9 @@ module.exports = {
     process.env.HUGGINGFACEHUB_API_TOKEN
   ),
   HUGGING_FACE_MODEL: process.env.HUGGING_FACE_MODEL || "meta-llama/Llama-3.1-8B-Instruct",
+  RAZORPAY_KEY_ID: firstNonEmpty(process.env.RAZORPAY_KEY_ID, process.env.RZP_KEY_ID),
+  RAZORPAY_KEY_SECRET: firstNonEmpty(
+    process.env.RAZORPAY_KEY_SECRET,
+    process.env.RZP_KEY_SECRET
+  ),
 };

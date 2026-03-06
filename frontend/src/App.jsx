@@ -6,6 +6,7 @@ import SubjectOverview from "./pages/SubjectOverview";
 import VideoPage from "./pages/VideoPage";
 import Profile from "./pages/Profile";
 import MyCourses from "./pages/MyCourses";
+import Checkout from "./pages/Checkout";
 import AuthGuard from "./components/Auth/AuthGuard";
 
 export default function App() {
@@ -43,6 +44,14 @@ export default function App() {
         element={
           <AuthGuard>
             <Profile />
+          </AuthGuard>
+        }
+      />
+      <Route
+        path="/checkout/:subjectId"
+        element={
+          <AuthGuard>
+            <Checkout />
           </AuthGuard>
         }
       />
