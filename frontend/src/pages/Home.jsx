@@ -7,6 +7,7 @@ import useAuthStore from "../store/authStore";
 
 export default function Home() {
   const [subjects, setSubjects] = useState([]);
+  const [loadingSubjects, setLoadingSubjects] = useState(true);
   const [error, setError] = useState("");
   const [enrolledIds, setEnrolledIds] = useState([]);
   const [enrollingId, setEnrollingId] = useState(null);
@@ -15,10 +16,12 @@ export default function Home() {
   const enrolledSet = useMemo(() => new Set(enrolledIds), [enrolledIds]);
 
   useEffect(() => {
+    setLoadingSubjects(true);
     apiClient
       .get("/subjects?page=1&pageSize=20")
       .then((res) => setSubjects(res.data.items || []))
-      .catch(() => setError("Failed to load subjects"));
+      .catch(() => setError("Failed to load subjects"))
+      .finally(() => setLoadingSubjects(false));
   }, []);
 
   useEffect(() => {
@@ -75,44 +78,50 @@ export default function Home() {
             <h2 className="text-2xl font-bold text-slate-900">Top Subjects</h2>
             <span className="text-sm font-medium text-slate-500">{subjects.length} available</span>
           </div>
-        {error ? <Alert>{error}</Alert> : null}
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {subjects.map((subject) => (
-            <Link
-              key={subject.id}
-              to={`/subjects/${subject.id}`}
-              className="group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md"
-            >
-              <SubjectCover previewUrl={subject.preview_youtube_url} />
-              <div className="space-y-2 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">Guided Course</p>
-                <h3 className="line-clamp-2 text-base font-bold text-slate-900 group-hover:text-blue-700">
-                  {subject.title}
-                </h3>
-                <p className="text-sm text-slate-600">
-                  Start learning with a locked sequence path and track your completion.
-                </p>
-                <div className="flex items-center justify-between pt-1">
-                  <p className="text-sm font-semibold text-slate-900">
-                    {formatInr(subject.price_inr)}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={(event) => onEnroll(event, subject.id)}
-                    disabled={Boolean(enrollingId) || enrolledSet.has(Number(subject.id))}
-                    className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-300"
-                  >
-                    {enrolledSet.has(Number(subject.id))
-                      ? "Enrolled"
-                      : enrollingId === Number(subject.id)
-                        ? "Opening..."
-                        : "Pay & Enroll"}
-                  </button>
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
+          {error ? <Alert>{error}</Alert> : null}
+          {loadingSubjects ? (
+            <p className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-600">
+              Loading courses...
+            </p>
+          ) : (
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {subjects.map((subject) => (
+                <Link
+                  key={subject.id}
+                  to={`/subjects/${subject.id}`}
+                  className="group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md"
+                >
+                  <SubjectCover previewUrl={subject.preview_youtube_url} />
+                  <div className="space-y-2 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">Guided Course</p>
+                    <h3 className="line-clamp-2 text-base font-bold text-slate-900 group-hover:text-blue-700">
+                      {subject.title}
+                    </h3>
+                    <p className="text-sm text-slate-600">
+                      Start learning with a locked sequence path and track your completion.
+                    </p>
+                    <div className="flex items-center justify-between pt-1">
+                      <p className="text-sm font-semibold text-slate-900">
+                        {formatInr(subject.price_inr)}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={(event) => onEnroll(event, subject.id)}
+                        disabled={Boolean(enrollingId) || enrolledSet.has(Number(subject.id))}
+                        className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-300"
+                      >
+                        {enrolledSet.has(Number(subject.id))
+                          ? "Enrolled"
+                          : enrollingId === Number(subject.id)
+                            ? "Opening..."
+                            : "Pay & Enroll"}
+                      </button>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </section>
       </div>
     </AppShell>

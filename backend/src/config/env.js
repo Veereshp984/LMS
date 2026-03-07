@@ -1,4 +1,6 @@
 const dotenv = require("dotenv");
+const fs = require("fs");
+const path = require("path");
 
 dotenv.config();
 
@@ -13,6 +15,82 @@ function required(name) {
 function firstNonEmpty(...values) {
   return values.map((value) => (typeof value === "string" ? value.trim() : "")).find(Boolean) || "";
 }
+
+function splitCsvLine(line) {
+  const result = [];
+  let current = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i += 1) {
+    const char = line[i];
+
+    if (char === '"') {
+      const next = line[i + 1];
+      if (inQuotes && next === '"') {
+        current += '"';
+        i += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+
+    if (char === "," && !inQuotes) {
+      result.push(current.trim());
+      current = "";
+      continue;
+    }
+
+    current += char;
+  }
+
+  result.push(current.trim());
+  return result;
+}
+
+function loadRazorpayKeysFromCsv() {
+  const candidates = [
+    path.resolve(process.cwd(), "api-keys.csv"),
+    path.resolve(process.cwd(), "..", "api-keys.csv"),
+    path.resolve(process.cwd(), "backend", "api-keys.csv"),
+    path.resolve(process.cwd(), "..", "backend", "api-keys.csv"),
+    path.resolve(__dirname, "..", "..", "api-keys.csv"),
+    path.resolve(__dirname, "..", "..", "..", "..", "api-keys.csv"),
+    path.resolve(__dirname, "..", "..", "..", "api-keys.csv"),
+  ];
+  const keyIdHeaders = new Set(["key_id", "razorpay_key_id", "rzp_key_id"]);
+  const keySecretHeaders = new Set(["key_secret", "razorpay_key_secret", "rzp_key_secret"]);
+
+  for (const filePath of Array.from(new Set(candidates))) {
+    if (!fs.existsSync(filePath)) continue;
+    try {
+      const raw = fs.readFileSync(filePath, "utf8");
+      const lines = raw
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean);
+      if (lines.length < 2) continue;
+
+      const headers = splitCsvLine(lines[0]).map((h) => h.replace(/^\uFEFF/, "").trim().toLowerCase());
+      const keyIdIndex = headers.findIndex((header) => keyIdHeaders.has(header));
+      const keySecretIndex = headers.findIndex((header) => keySecretHeaders.has(header));
+      if (keyIdIndex < 0 || keySecretIndex < 0) continue;
+
+      for (let i = 1; i < lines.length; i += 1) {
+        const values = splitCsvLine(lines[i]);
+        const keyId = values[keyIdIndex] || "";
+        const keySecret = values[keySecretIndex] || "";
+        if (keyId && keySecret) return { keyId, keySecret };
+      }
+    } catch (error) {
+      // Ignore malformed CSV files and try next candidate.
+    }
+  }
+
+  return { keyId: "", keySecret: "" };
+}
+
+const csvKeys = loadRazorpayKeysFromCsv();
 
 module.exports = {
   NODE_ENV: process.env.NODE_ENV || "development",
@@ -42,9 +120,14 @@ module.exports = {
     process.env.HUGGINGFACEHUB_API_TOKEN
   ),
   HUGGING_FACE_MODEL: process.env.HUGGING_FACE_MODEL || "Qwen/Qwen3.5-0.8B",
-  RAZORPAY_KEY_ID: firstNonEmpty(process.env.RAZORPAY_KEY_ID, process.env.RZP_KEY_ID),
+  RAZORPAY_KEY_ID: firstNonEmpty(
+    process.env.RAZORPAY_KEY_ID,
+    process.env.RZP_KEY_ID,
+    csvKeys.keyId
+  ),
   RAZORPAY_KEY_SECRET: firstNonEmpty(
     process.env.RAZORPAY_KEY_SECRET,
-    process.env.RZP_KEY_SECRET
+    process.env.RZP_KEY_SECRET,
+    csvKeys.keySecret
   ),
 };
