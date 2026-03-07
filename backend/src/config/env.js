@@ -2,7 +2,17 @@ const dotenv = require("dotenv");
 const fs = require("fs");
 const path = require("path");
 
-dotenv.config();
+const dotenvCandidates = [
+  path.resolve(__dirname, "..", "..", ".env"),
+  path.resolve(process.cwd(), ".env"),
+  path.resolve(process.cwd(), "backend", ".env"),
+];
+
+for (const envPath of Array.from(new Set(dotenvCandidates))) {
+  if (fs.existsSync(envPath)) {
+    dotenv.config({ path: envPath, override: false });
+  }
+}
 
 function required(name) {
   const value = process.env[name];
