@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import AppShell from "../components/Layout/AppShell";
 import apiClient from "../lib/apiClient";
 import useSidebarStore from "../store/sidebarStore";
@@ -13,12 +13,14 @@ import { flushProgress, sendProgressDebounced } from "../lib/progress";
 export default function VideoPage() {
   const { subjectId, videoId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { tree, setTree, markVideoCompleted } = useSidebarStore();
   const [video, setVideo] = useState(null);
   const [progress, setProgress] = useState({ last_position_seconds: 0, is_completed: false });
   const [summary, setSummary] = useState({ percent_complete: 0 });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const autoplayNext = Boolean(location.state?.autoplayNext);
 
   const isLocked = useMemo(() => Boolean(video?.locked), [video]);
 
@@ -63,7 +65,7 @@ export default function VideoPage() {
     await flushProgress(videoId, { last_position_seconds: progress.last_position_seconds, is_completed: true });
     markVideoCompleted(videoId);
     if (video?.next_video_id) {
-      navigate(`/subjects/${subjectId}/video/${video.next_video_id}`);
+      navigate(`/subjects/${subjectId}/video/${video.next_video_id}`, { state: { autoplayNext: true } });
     }
   };
 
@@ -81,9 +83,11 @@ export default function VideoPage() {
           ) : (
             <div className="overflow-hidden rounded-xl border border-slate-200 bg-white p-2 shadow-sm">
               <VideoPlayer
+                key={videoId}
                 videoId={null}
                 youtubeUrl={video?.youtube_url}
                 startPositionSeconds={progress.last_position_seconds}
+                autoplay={autoplayNext}
                 onProgress={handleProgress}
                 onCompleted={handleCompleted}
               />
