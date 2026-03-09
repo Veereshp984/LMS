@@ -1,6 +1,7 @@
 const repo = require("./video.repository");
 const db = require("../../config/db");
 const { buildGlobalSequence, getPrevNext, isUnlocked } = require("../../utils/ordering");
+const { extractPlaylistId, fetchPlaylistItems } = require("../../utils/youtubePlaylist");
 
 async function getVideoDetails(videoId, userId) {
   const video = await repo.getVideoById(videoId);
@@ -15,6 +16,8 @@ async function getVideoDetails(videoId, userId) {
     .where({ user_id: userId, is_completed: 1 });
   const completedSet = new Set(completedRows.map((r) => Number(r.video_id)));
   const unlockedState = isUnlocked(sequence, video.id, completedSet);
+  const playlistId = extractPlaylistId(video.youtube_url || "");
+  const playlistItems = playlistId ? await fetchPlaylistItems(playlistId) : [];
 
   return {
     id: video.id,
@@ -31,6 +34,8 @@ async function getVideoDetails(videoId, userId) {
     next_video_id: neighbors.next_video_id,
     locked: unlockedState.locked,
     unlock_reason: unlockedState.unlock_reason,
+    playlist_id: playlistId,
+    playlist_items: playlistItems,
   };
 }
 

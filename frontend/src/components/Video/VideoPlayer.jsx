@@ -26,6 +26,7 @@ export default function VideoPlayer({
   videoId,
   youtubeUrl,
   startPositionSeconds = 0,
+  playlistIndex = 0,
   autoplay = false,
   onProgress,
   onCompleted,
@@ -69,7 +70,7 @@ export default function VideoPlayer({
           playerVars: {
             start: startPositionSeconds || 0,
             autoplay: autoplay ? 1 : 0,
-            ...(ytPlaylistId ? { listType: "playlist", list: ytPlaylistId } : {}),
+            ...(ytPlaylistId ? { listType: "playlist", list: ytPlaylistId, index: playlistIndex } : {}),
           },
         }}
         onReady={(event) => {
