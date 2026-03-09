@@ -62,10 +62,22 @@ export default function VideoPage() {
   };
 
   const handleCompleted = async () => {
-    await flushProgress(videoId, { last_position_seconds: progress.last_position_seconds, is_completed: true });
+    const nextVideoId = video?.next_video_id;
+
     markVideoCompleted(videoId);
-    if (video?.next_video_id) {
-      navigate(`/subjects/${subjectId}/video/${video.next_video_id}`, { state: { autoplayNext: true } });
+
+    try {
+      await flushProgress(videoId, {
+        last_position_seconds: progress.last_position_seconds,
+        is_completed: true,
+      });
+    } catch (e) {
+      // Keep next-video flow working even if progress sync fails.
+      console.error("Failed to flush completion progress", e);
+    } finally {
+      if (nextVideoId) {
+        navigate(`/subjects/${subjectId}/video/${nextVideoId}`, { state: { autoplayNext: true } });
+      }
     }
   };
 
