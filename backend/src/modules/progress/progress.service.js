@@ -1,9 +1,18 @@
 const repo = require("./progress.repository");
 const videoService = require("../videos/video.service");
+const enrollmentRepo = require("../enrollments/enrollment.repository");
+
+function createHttpError(status, message) {
+  const error = new Error(message);
+  error.status = status;
+  return error;
+}
 
 async function getVideoProgress(userId, videoId) {
   const video = await videoService.validateVideoBelongsToPublishedSubject(videoId);
   if (!video) return null;
+  const enrolled = await enrollmentRepo.isEnrolled(userId, video.subject_id);
+  if (!enrolled) throw createHttpError(403, "Purchase the course");
   const progress = await repo.getVideoProgress(userId, videoId);
   if (!progress) {
     return { last_position_seconds: 0, is_completed: false };
@@ -17,6 +26,8 @@ async function getVideoProgress(userId, videoId) {
 async function saveVideoProgress(userId, videoId, body) {
   const video = await videoService.validateVideoBelongsToPublishedSubject(videoId);
   if (!video) return null;
+  const enrolled = await enrollmentRepo.isEnrolled(userId, video.subject_id);
+  if (!enrolled) throw createHttpError(403, "Purchase the course");
   const duration = Number(video.duration_seconds || 0);
   const completed = Boolean(body.is_completed);
   let lastPos = Number(body.last_position_seconds || 0);

@@ -85,10 +85,12 @@ export default function Home() {
             </p>
           ) : (
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {subjects.map((subject) => (
+              {subjects.map((subject) => {
+                const enrolled = enrolledSet.has(Number(subject.id));
+                return (
                 <Link
                   key={subject.id}
-                  to={`/subjects/${subject.id}`}
+                  to={enrolled ? `/subjects/${subject.id}` : `/checkout/${subject.id}`}
                   className="group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md"
                 >
                   <SubjectCover previewUrl={subject.preview_youtube_url} />
@@ -114,12 +116,13 @@ export default function Home() {
                           ? "Enrolled"
                           : enrollingId === Number(subject.id)
                             ? "Opening..."
-                            : "Pay & Enroll"}
+                            : "Purchase"}
                       </button>
                     </div>
                   </div>
                 </Link>
-              ))}
+                );
+              })}
             </div>
           )}
         </section>

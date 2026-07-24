@@ -1,8 +1,10 @@
 const db = require("../../config/db");
+const { getSubjectSelectColumns, mapSubjectPrice } = require("../../utils/subjectSelects");
 const { getSectionsWithVideosBySubjectId } = require("../sections/section.repository");
 
 async function listPublishedSubjects({ page, pageSize, q }) {
   const base = db("subjects").where({ is_published: 1 });
+  const subjectColumns = await getSubjectSelectColumns(["created_at"]);
   if (q) {
     base.andWhere((qb) => {
       qb.where("title", "like", `%${q}%`).orWhere("description", "like", `%${q}%`);
@@ -12,7 +14,7 @@ async function listPublishedSubjects({ page, pageSize, q }) {
     base.clone().count({ count: "id" }),
     base
       .clone()
-      .select("id", "title", "slug", "description", "price_inr", "created_at")
+      .select(...subjectColumns)
       .orderBy("created_at", "desc")
       .limit(pageSize)
       .offset((page - 1) * pageSize),
@@ -43,7 +45,7 @@ async function listPublishedSubjects({ page, pageSize, q }) {
     }
   }
 
-  const items = subjects.map((subject) => ({
+  const items = mapSubjectPrice(subjects).map((subject) => ({
     ...subject,
     preview_youtube_url: previewBySubject.get(Number(subject.id)) || null,
   }));
@@ -54,11 +56,13 @@ async function listPublishedSubjects({ page, pageSize, q }) {
   };
 }
 
-function getPublishedSubjectById(subjectId) {
-  return db("subjects")
-    .select("id", "title", "slug", "description", "price_inr", "is_published", "created_at", "updated_at")
+async function getPublishedSubjectById(subjectId) {
+  const subjectColumns = await getSubjectSelectColumns(["is_published", "created_at", "updated_at"]);
+  const subject = await db("subjects")
+    .select(...subjectColumns)
     .where({ id: subjectId, is_published: 1 })
     .first();
+  return mapSubjectPrice(subject ? [subject] : [])[0] || null;
 }
 
 async function getSubjectWithTree(subjectId) {

@@ -1,10 +1,13 @@
 const db = require("../../config/db");
+const { getSubjectSelectColumns, mapSubjectPrice } = require("../../utils/subjectSelects");
 
-function getPublishedSubjectById(subjectId) {
-  return db("subjects")
-    .select("id", "title", "price_inr", "is_published")
+async function getPublishedSubjectById(subjectId) {
+  const columns = await getSubjectSelectColumns(["is_published"]);
+  const subject = await db("subjects")
+    .select(...columns)
     .where({ id: subjectId, is_published: 1 })
     .first();
+  return mapSubjectPrice(subject ? [subject] : [])[0] || null;
 }
 
 function isEnrolled(userId, subjectId) {

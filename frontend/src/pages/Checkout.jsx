@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import AppShell from "../components/Layout/AppShell";
 import apiClient from "../lib/apiClient";
 import useAuthStore from "../store/authStore";
@@ -29,6 +29,7 @@ function loadRazorpayScript() {
 export default function Checkout() {
   const { subjectId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuthStore();
   const [subject, setSubject] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -36,6 +37,7 @@ export default function Checkout() {
   const [error, setError] = useState("");
 
   const amountText = useMemo(() => formatInr(subject?.price_inr), [subject?.price_inr]);
+  const notice = location.state?.message;
 
   useEffect(() => {
     let active = true;
@@ -139,6 +141,7 @@ export default function Checkout() {
         <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">Secure Checkout</p>
         <h1 className="mt-2 text-2xl font-bold text-slate-900">{subject.title}</h1>
         <p className="mt-2 text-sm text-slate-600">{subject.description || "Course enrollment payment"}</p>
+        {notice ? <p className="mt-3 rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700">{notice}</p> : null}
 
         <div className="mt-5 flex items-center justify-between rounded-lg bg-slate-50 px-4 py-3">
           <span className="text-sm text-slate-600">Amount payable</span>

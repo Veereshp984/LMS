@@ -1,6 +1,13 @@
 const db = require("../../config/db");
 const repo = require("./subject.repository");
+const enrollmentRepo = require("../enrollments/enrollment.repository");
 const { buildGlobalSequence, isUnlocked } = require("../../utils/ordering");
+
+function createHttpError(status, message) {
+  const error = new Error(message);
+  error.status = status;
+  return error;
+}
 
 async function listSubjects(query) {
   const page = Math.max(1, Number(query.page || 1));
@@ -16,6 +23,9 @@ async function getSubject(subjectId) {
 async function getTree(subjectId, userId) {
   const tree = await repo.getSubjectWithTree(subjectId);
   if (!tree) return null;
+  const enrolled = await enrollmentRepo.isEnrolled(userId, subjectId);
+  if (!enrolled) throw createHttpError(403, "Purchase the course");
+
   const sequence = buildGlobalSequence(tree.sections);
   const completedRows = await db("video_progress")
     .select("video_id")
@@ -47,6 +57,9 @@ async function getTree(subjectId, userId) {
 async function getFirstUnlockedVideo(subjectId, userId) {
   const tree = await repo.getSubjectWithTree(subjectId);
   if (!tree) return null;
+  const enrolled = await enrollmentRepo.isEnrolled(userId, subjectId);
+  if (!enrolled) throw createHttpError(403, "Purchase the course");
+
   const sequence = buildGlobalSequence(tree.sections);
   const completedRows = await db("video_progress")
     .select("video_id")

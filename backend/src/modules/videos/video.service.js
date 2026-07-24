@@ -1,11 +1,20 @@
 const repo = require("./video.repository");
 const db = require("../../config/db");
+const enrollmentRepo = require("../enrollments/enrollment.repository");
 const { buildGlobalSequence, getPrevNext, isUnlocked } = require("../../utils/ordering");
 const { extractPlaylistId, fetchPlaylistItems } = require("../../utils/youtubePlaylist");
+
+function createHttpError(status, message) {
+  const error = new Error(message);
+  error.status = status;
+  return error;
+}
 
 async function getVideoDetails(videoId, userId) {
   const video = await repo.getVideoById(videoId);
   if (!video || !video.is_published) return null;
+  const enrolled = await enrollmentRepo.isEnrolled(userId, video.subject_id);
+  if (!enrolled) throw createHttpError(403, "Purchase the course");
 
   const sections = await repo.getSubjectTreeForVideo(video.subject_id);
   const sequence = buildGlobalSequence(sections);

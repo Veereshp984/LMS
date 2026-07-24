@@ -19,12 +19,17 @@ export default function VideoPage() {
   const [video, setVideo] = useState(null);
   const [progress, setProgress] = useState({ last_position_seconds: 0, is_completed: false });
   const [summary, setSummary] = useState({ percent_complete: 0 });
+  const [completedPlaylistIndex, setCompletedPlaylistIndex] = useState(0);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const autoplayNext = Boolean(location.state?.autoplayNext);
   const rawPlaylistIndex = Number(searchParams.get("pi") || "0");
 
   const isLocked = useMemo(() => Boolean(video?.locked), [video]);
+  const playlistProgressKey = useMemo(
+    () => `playlist-progress:${videoId}`,
+    [videoId]
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -47,6 +52,13 @@ export default function VideoPage() {
         }
       } catch (e) {
         if (!mounted) return;
+        if (e?.response?.status === 403) {
+          navigate(`/checkout/${subjectId}`, {
+            replace: true,
+            state: { message: e.response.data?.message || "Purchase the course" },
+          });
+          return;
+        }
         setError("Failed to load video page");
       } finally {
         if (mounted) setLoading(false);
@@ -56,7 +68,19 @@ export default function VideoPage() {
     return () => {
       mounted = false;
     };
-  }, [subjectId, videoId, setTree]);
+  }, [subjectId, videoId, setTree, navigate]);
+
+  useEffect(() => {
+    setCompletedPlaylistIndex(0);
+    try {
+      const saved = Number(localStorage.getItem(playlistProgressKey) || "0");
+      if (Number.isFinite(saved) && saved > 0) {
+        setCompletedPlaylistIndex(saved);
+      }
+    } catch (e) {
+      setCompletedPlaylistIndex(0);
+    }
+  }, [playlistProgressKey]);
 
   const handleProgress = (seconds) => {
     setProgress((p) => ({ ...p, last_position_seconds: seconds }));
@@ -65,6 +89,24 @@ export default function VideoPage() {
 
   const handleCompleted = async () => {
     const nextVideoId = video?.next_video_id;
+    const playlistItems = video?.playlist_items || [];
+    const lastPlaylistIndex = playlistItems.length - 1;
+
+    if (playlistItems.length > 0 && playlistIndex < lastPlaylistIndex) {
+      const nextPlaylistIndex = playlistIndex + 1;
+      setCompletedPlaylistIndex((current) => {
+        const next = Math.max(current, nextPlaylistIndex);
+        try {
+          localStorage.setItem(playlistProgressKey, String(next));
+        } catch (e) {
+          // Ignore storage failures; in-memory progress still unlocks the next item.
+        }
+        return next;
+      });
+      setProgress((current) => ({ ...current, last_position_seconds: 0 }));
+      setSearchParams({ pi: String(nextPlaylistIndex) });
+      return;
+    }
 
     markVideoCompleted(videoId);
 
@@ -73,6 +115,9 @@ export default function VideoPage() {
         last_position_seconds: progress.last_position_seconds,
         is_completed: true,
       });
+      setProgress((current) => ({ ...current, is_completed: true }));
+      const summaryRes = await apiClient.get(`/progress/subjects/${subjectId}`);
+      setSummary(summaryRes.data);
     } catch (e) {
       // Keep next-video flow working even if progress sync fails.
       console.error("Failed to flush completion progress", e);
@@ -83,12 +128,31 @@ export default function VideoPage() {
     }
   };
 
-  if (loading) return <AppShell>Loading video...</AppShell>;
   const playlistItems = video?.playlist_items || [];
   const playlistIndex =
     Number.isFinite(rawPlaylistIndex) && rawPlaylistIndex >= 0 && rawPlaylistIndex < playlistItems.length
       ? rawPlaylistIndex
       : 0;
+  const lastPlaylistIndex = playlistItems.length - 1;
+  const allowedPlaylistIndex = progress.is_completed
+    ? Math.max(0, lastPlaylistIndex)
+    : Math.min(Math.max(0, completedPlaylistIndex), Math.max(0, lastPlaylistIndex));
+  const playerStartPosition =
+    playlistItems.length > 0 && playlistIndex !== 0 ? 0 : progress.last_position_seconds;
+  const displayedPercent =
+    playlistItems.length > 0
+      ? Math.round(
+          ((progress.is_completed ? playlistItems.length : allowedPlaylistIndex) / playlistItems.length) * 100
+        )
+      : summary.percent_complete;
+
+  useEffect(() => {
+    if (playlistItems.length > 0 && playlistIndex > allowedPlaylistIndex) {
+      setSearchParams({ pi: String(allowedPlaylistIndex) });
+    }
+  }, [allowedPlaylistIndex, playlistIndex, playlistItems.length, setSearchParams]);
+
+  if (loading) return <AppShell>Loading video...</AppShell>;
 
   return (
     <AppShell>
@@ -105,7 +169,7 @@ export default function VideoPage() {
                 key={`${videoId}-${playlistIndex}`}
                 videoId={null}
                 youtubeUrl={video?.youtube_url}
-                startPositionSeconds={progress.last_position_seconds}
+                startPositionSeconds={playerStartPosition}
                 playlistIndex={playlistIndex}
                 autoplay={autoplayNext}
                 onProgress={handleProgress}
@@ -121,25 +185,32 @@ export default function VideoPage() {
               <div className="max-h-80 space-y-1 overflow-y-auto pr-1">
                 {playlistItems.map((item, index) => {
                   const active = index === playlistIndex;
+                  const locked = index > allowedPlaylistIndex;
                   return (
                     <button
                       key={item.youtube_video_id}
                       type="button"
-                      onClick={() => setSearchParams({ pi: String(index) })}
+                      onClick={() => {
+                        if (!locked) setSearchParams({ pi: String(index) });
+                      }}
+                      disabled={locked}
                       className={`w-full rounded-md border px-3 py-2 text-left text-sm transition ${
                         active
                           ? "border-blue-300 bg-blue-50 text-blue-700"
+                          : locked
+                            ? "cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400"
                           : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                       }`}
                     >
                       {index + 1}. {item.title}
+                      {locked ? " (Locked)" : ""}
                     </button>
                   );
                 })}
               </div>
             </div>
           ) : null}
-          <VideoProgressBar percent={summary.percent_complete} />
+          <VideoProgressBar percent={displayedPercent} />
         </div>
       </div>
     </AppShell>

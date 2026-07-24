@@ -15,7 +15,14 @@ export default function SubjectOverview() {
           navigate(`/subjects/${subjectId}/video/${res.data.video_id}`, { replace: true });
         }
       })
-      .catch(() => {
+      .catch((err) => {
+        if (err?.response?.status === 403) {
+          navigate(`/checkout/${subjectId}`, {
+            replace: true,
+            state: { message: err.response.data?.message || "Purchase the course" },
+          });
+          return;
+        }
         navigate("/", { replace: true });
       });
   }, [subjectId, navigate]);
